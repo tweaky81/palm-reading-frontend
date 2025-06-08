@@ -17,7 +17,8 @@ function App() {
     formData.append("type", readingType);
 
     try {
-      const res = await fetch("https://your-backend-url.onrender.com/analyze", {
+      const res = await fetch("https://palm-reading-backend-1.onrender.com/analyze", {
+
         method: "POST",
         body: formData,
       });
