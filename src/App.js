@@ -16,19 +16,16 @@ function App() {
     formData.append("image", image);
     formData.append("type", readingType);
 
-   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    try {
+      const res = await fetch("https://palm-reading-backend-1.onrender.com/analyze", {
 
-try {
-  const res = await fetch(`${backendUrl}/analyze`, {
-    method: "POST",
-    body: formData,
-  });
-  const data = await res.json();
-  alert(data.message || "Submitted!");
-} catch (err) {
-  alert("Something went wrong!");
-}
-
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      alert(data.message || "Submitted!");
+    } catch (err) {
+      alert("Something went wrong!");
     }
   };
 
@@ -51,5 +48,3 @@ try {
     </div>
   );
 }
-
-export default App;
