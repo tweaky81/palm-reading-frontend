@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 function App() {
   const [image, setImage] = useState(null);
-  const [readingType, setReadingType] = useState("career");
+  const [loading, setLoading] = useState(false);
 
   const handleImageChange = (e) => {
     setImage(e.target.files[0]);
@@ -11,21 +11,38 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!image) return alert("Please upload a palm photo.");
-
-    const formData = new FormData();
-    formData.append("image", image);
-    formData.append("type", readingType);
+    setLoading(true);
 
     try {
-      const res = await fetch("https://palm-reading-backend-1.onrender.com/analyze", {
+      // 1. Upload image
+      const formData = new FormData();
+      formData.append("palmImage", image);
 
+      const uploadRes = await fetch("https://palm-reading-backend-1.onrender.com/upload", {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
-      alert(data.message || "Submitted!");
+
+      const uploadData = await uploadRes.json();
+      const filename = uploadData.filename;
+
+      // 2. Create Stripe checkout session
+      const sessionRes = await fetch("https://palm-reading-backend-1.onrender.com/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename }),
+      });
+
+      const sessionData = await sessionRes.json();
+      if (!sessionData.url) throw new Error("Failed to create session");
+
+      // 3. Redirect to Stripe
+      window.location.href = sessionData.url;
     } catch (err) {
-      alert("Something went wrong!");
+      console.error("Error:", err);
+      alert("Something went wrong.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,18 +50,14 @@ function App() {
     <div style={{ maxWidth: 400, margin: "50px auto", textAlign: "center" }}>
       <h1>Palm Reading</h1>
       <form onSubmit={handleSubmit}>
-        <div>
-          <input type="file" accept="image/*" onChange={handleImageChange} />
-        </div>
-        <div style={{ margin: "10px 0" }}>
-          <select onChange={(e) => setReadingType(e.target.value)} value={readingType}>
-            <option value="career">Career</option>
-            <option value="love">Love</option>
-            <option value="personality">Personality</option>
-          </select>
-        </div>
-        <button type="submit">Get Reading</button>
+        <input type="file" accept="image/*" onChange={handleImageChange} />
+        <button type="submit" disabled={loading}>
+          {loading ? "Processing..." : "Upload & Pay £1.99"}
+        </button>
       </form>
     </div>
   );
 }
+
+export default App;
+
